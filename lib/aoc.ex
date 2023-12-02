@@ -22,6 +22,13 @@ defmodule Aoc do
     solution_1(file_stream)
   end
 
+  def day1_part2() do
+    file_stream = File.stream!(@path_day1, [], :line)
+    file_stream
+    |> Aoc.part_2_process()
+    |> solution_1()
+  end
+
   def solution_1(data) do
     data
     |> Enum.reduce([], fn line, acc ->
@@ -30,6 +37,28 @@ defmodule Aoc do
     |> Enum.map(fn line -> [Enum.at(line, 0), Enum.at(line, -1)] end)
     |> Enum.map(fn [h, l] -> String.to_integer("#{h}#{l}") end)
     |> Enum.sum()
+  end
+
+  def part_2_process(data) do
+    nums = %{
+      "one" => "one1one",
+      "two" => "two2two",
+      "three" => "three3three",
+      "four" => "four4four",
+      "five" => "five5five",
+      "six" => "six6six",
+      "seven" => "seven7seven",
+      "eight" => "eight8eight",
+      "nine" => "nine9nine"
+    }
+
+    data
+    |> Enum.map(fn line -> process_number(line, nums) end)
+  end
+
+  def process_number(line, translation) do
+    translation
+    |> Enum.reduce(line, fn {k, v}, acc -> String.replace(acc, k, v)  end)
   end
 
   @path_day2 "./resources/adventofcode.com_2023_day_2_input.txt"
@@ -52,9 +81,11 @@ defmodule Aoc do
       |> Enum.reduce(%{}, fn {k, v}, acc -> Map.put(acc, k, game_merge_max(v)) end)
 
     max_possible
-    |> Enum.map(fn {id, game} -> {id, Map.filter(game, fn {k, v} -> v <= Map.get(criteria, k) end)} end)
+    |> Enum.map(fn {id, game} ->
+      {id, Map.filter(game, fn {k, v} -> v <= Map.get(criteria, k) end)}
+    end)
     |> Enum.filter(fn {_id, game} -> Enum.count(game) == 3 end)
-    |> Enum.reduce(0, fn {id, _game}, acc -> acc + id  end)
+    |> Enum.reduce(0, fn {id, _game}, acc -> acc + id end)
   end
 
   def game_id_from_string(game_id) do
