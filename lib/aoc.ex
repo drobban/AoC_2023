@@ -19,8 +19,11 @@ defmodule Aoc do
   @path "./resources/adventofcode.com_2023_day_1_input.txt"
   def day1() do
     file_stream = File.stream!(@path, [], :line)
+    solution_1(file_stream)
+  end
 
-    file_stream
+  def solution_1(data) do
+    data
     |> Enum.reduce([], fn line, acc ->
       [String.replace(line, ~r/[^\d]/, "") |> String.split("", trim: true) | acc]
     end)
