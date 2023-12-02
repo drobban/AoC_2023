@@ -24,6 +24,7 @@ defmodule Aoc do
 
   def day1_part2() do
     file_stream = File.stream!(@path_day1, [], :line)
+
     file_stream
     |> Aoc.part_2_process()
     |> solution_1()
@@ -58,13 +59,19 @@ defmodule Aoc do
 
   def process_number(line, translation) do
     translation
-    |> Enum.reduce(line, fn {k, v}, acc -> String.replace(acc, k, v)  end)
+    |> Enum.reduce(line, fn {k, v}, acc -> String.replace(acc, k, v) end)
   end
 
   @path_day2 "./resources/adventofcode.com_2023_day_2_input.txt"
   def day2() do
     file_stream = File.stream!(@path_day2, [], :line)
     solution_2(file_stream, %{"red" => 12, "green" => 13, "blue" => 14})
+  end
+
+  @path_day2 "./resources/adventofcode.com_2023_day_2_input.txt"
+  def day2_part2() do
+    file_stream = File.stream!(@path_day2, [], :line)
+    solution_2_part2(file_stream)
   end
 
   def solution_2(data, criteria) do
@@ -86,6 +93,21 @@ defmodule Aoc do
     end)
     |> Enum.filter(fn {_id, game} -> Enum.count(game) == 3 end)
     |> Enum.reduce(0, fn {id, _game}, acc -> acc + id end)
+  end
+
+  def solution_2_part2(data) do
+      data
+      |> Enum.map(fn line -> String.split(line, ":", trim: true) end)
+      |> Enum.map(fn [game_id, game] ->
+        [game_id, game |> String.trim("\n") |> String.split(";", trim: true)]
+      end)
+      |> Enum.reduce(%{}, fn [id, games], acc ->
+        Map.put(acc, game_id_from_string(id), game_kv(games))
+      end)
+      |> Enum.reduce(%{}, fn {k, v}, acc -> Map.put(acc, k, game_merge_max(v)) end)
+      |> Enum.map(fn {_k, v} ->  Map.values(v) end)
+      |> Enum.map(fn powers -> Enum.reduce(powers, 1, fn p, acc -> p * acc end) end)
+      |> Enum.sum()
   end
 
   def game_id_from_string(game_id) do
