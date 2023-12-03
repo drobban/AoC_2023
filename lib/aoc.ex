@@ -96,18 +96,18 @@ defmodule Aoc do
   end
 
   def solution_2_part2(data) do
-      data
-      |> Enum.map(fn line -> String.split(line, ":", trim: true) end)
-      |> Enum.map(fn [game_id, game] ->
-        [game_id, game |> String.trim("\n") |> String.split(";", trim: true)]
-      end)
-      |> Enum.reduce(%{}, fn [id, games], acc ->
-        Map.put(acc, game_id_from_string(id), game_kv(games))
-      end)
-      |> Enum.reduce(%{}, fn {k, v}, acc -> Map.put(acc, k, game_merge_max(v)) end)
-      |> Enum.map(fn {_k, v} ->  Map.values(v) end)
-      |> Enum.map(fn powers -> Enum.reduce(powers, 1, fn p, acc -> p * acc end) end)
-      |> Enum.sum()
+    data
+    |> Enum.map(fn line -> String.split(line, ":", trim: true) end)
+    |> Enum.map(fn [game_id, game] ->
+      [game_id, game |> String.trim("\n") |> String.split(";", trim: true)]
+    end)
+    |> Enum.reduce(%{}, fn [id, games], acc ->
+      Map.put(acc, game_id_from_string(id), game_kv(games))
+    end)
+    |> Enum.reduce(%{}, fn {k, v}, acc -> Map.put(acc, k, game_merge_max(v)) end)
+    |> Enum.map(fn {_k, v} -> Map.values(v) end)
+    |> Enum.map(fn powers -> Enum.reduce(powers, 1, fn p, acc -> p * acc end) end)
+    |> Enum.sum()
   end
 
   def game_id_from_string(game_id) do
@@ -130,4 +130,223 @@ defmodule Aoc do
     games
     |> Enum.reduce(%{}, fn game, acc -> Map.merge(acc, game, fn _k, v1, v2 -> max(v1, v2) end) end)
   end
+
+  @path_day3 "./resources/adventofcode.com_2023_day_3_input.txt"
+  def day3() do
+    file_stream = File.stream!(@path_day3, [], :line)
+    solution_3(file_stream)
+  end
+
+  def solution_3(data) do
+    # create window of two rows long. merge and compare.
+    # n groups or group size indicates adjacent symbol
+    # lines =
+
+    hit_map =
+      {
+        data
+        |> Enum.map(fn line -> String.replace(line, "\n", "") |> String.replace(" ", "") end)
+        |> Enum.map(fn line -> String.split(line, "", trim: true) end)
+        |> Enum.to_list()
+        |> Aoc.construct_zipped()
+        |> Enum.to_list()
+        |> Aoc.build_hit_table()
+        |> Enum.reduce(%{}, fn {k, v}, acc -> Map.put(acc, k - 1, v) end),
+        data
+        |> Enum.map(fn line -> String.replace(line, "\n", "") end)
+        |> Enum.map(fn line -> String.split(line, "", trim: true) end)
+        |> Enum.to_list()
+        |> Aoc.construct_zipped_rev()
+        |> Enum.to_list()
+        |> Aoc.build_hit_table()
+      }
+
+    |> merge_entries()
+
+    numbers =
+      data
+      |> Enum.map(fn line ->
+        line
+        |> String.split(~r/[^\d]/, trim: true)
+        |> Enum.map(fn x ->
+          String.to_integer(x)
+        end)
+      end)
+
+    hit_map
+    |> Enum.reduce([], fn {idx, c}, acc ->
+      selected =
+        for e_idx <- c do
+          numbers
+          |> Enum.at(idx)
+          |> Enum.at(e_idx)
+        end
+
+      acc ++ selected
+    end)
+    |> Enum.sum
+
+    # hit_map
+    # |> Stream.map(fn line -> String.replace(line, "\n", "") end)
+    # |> Stream.map(fn line -> String.split(line, "", trim: true) end)
+    # |> Enum.to_list()
+  end
+
+  def merge_entries({kv1, kv2} = _hit_maps) do
+    k1 = Map.keys(kv1) |> MapSet.new()
+    k2 = Map.keys(kv2) |> MapSet.new()
+
+    intersect = MapSet.intersection(k1, k2)
+
+    intersect
+    |> Enum.reduce(%{}, fn k, acc ->
+      e1 = Map.get(kv1, k) |> Map.get(:entries)
+      e2 = Map.get(kv2, k) |> Map.get(:entries)
+      unique = MapSet.new(e1 ++ e2)
+      Map.put(acc, k, unique)
+    end)
+  end
+
+  def construct_zipped(data) do
+    l_padded = data ++ [List.duplicate(".", data |> Enum.at(0) |> Enum.count())]
+    r_padded = [List.duplicate(".", data |> Enum.at(0) |> Enum.count())] ++ data
+
+    # Zip every row with prev.
+    # to ease col check
+
+    l_padded
+    |> Enum.with_index()
+    |> Enum.reduce([], fn {line, idx}, acc -> acc ++ [Enum.zip(line, Enum.at(r_padded, idx))] end)
+  end
+
+  def construct_zipped_rev(data) do
+    l_padded = data ++ [List.duplicate(".", data |> Enum.at(0) |> Enum.count())]
+    r_padded = [List.duplicate(".", data |> Enum.at(0) |> Enum.count())] ++ data
+
+    # Zip every row with prev.
+    # to ease col check
+
+    r_padded
+    |> Enum.with_index()
+    |> Enum.reduce([], fn {line, idx}, acc -> acc ++ [Enum.zip(line, Enum.at(l_padded, idx))] end)
+  end
+
+  def build_hit_table(data) do
+    data
+    |> Enum.with_index()
+    |> Enum.reduce(%{}, fn {lines, idx}, acc -> Map.put(acc, idx, find_entries(lines)) end)
+  end
+
+  def find_entries(cols) do
+    cols
+    |> Enum.with_index()
+    |> Enum.reduce(%{num_state: 0, char_state: 0, v_idx: 0, entries: []}, fn {{p1, p2}, idx},
+                                                                             acc ->
+      find_cond(acc, p2, p1)
+    end)
+  end
+
+  def find_cond(state, p2, p1) do
+    bool_reset = ["."]
+    value_chars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+    cond do
+      # When to store IDX into entries
+      (p2 not in bool_reset and p2 not in value_chars and Map.get(state, :num_state) == 1) or
+          (p1 not in bool_reset and p1 not in value_chars and Map.get(state, :num_state) == 1) ->
+        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
+        |> Map.put(:char_state, 1)
+
+      p2 in value_chars and p1 not in bool_reset and p1 not in value_chars ->
+        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx) + 1] end)
+        |> Map.put(:char_state, 1)
+        |> Map.put(:num_state, 1)
+        |> Map.update(:v_idx, 0, fn idx -> idx + 1 end)
+
+      p2 in value_chars and Map.get(state, :char_state) == 1 ->
+        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
+        |> Map.put(:num_state, 1)
+
+      # When to increment v_idx
+      # p2 in bool_reset and p1 in bool_reset and Map.get(state, :num_state) == 1 and
+      #     Map.get(state, :char_state) == 1 ->
+      #   Map.update(state, :v_idx, 0, fn idx -> idx + 1 end)
+      #   |> Map.put(:num_state, 0)
+      #   |> Map.put(:char_state, 0)
+
+      # We have at least three cases... need to think about this one a little bit
+
+      # When to store num_state 1
+      p2 in value_chars ->
+        Map.put(state, :num_state, 1)
+
+      # When to store char_state 1
+      (p2 not in bool_reset and p2 not in value_chars) or
+          (p1 not in bool_reset and p1 not in value_chars) ->
+        Map.put(state, :char_state, 1)
+
+      # When to reset
+      p2 in bool_reset and p1 in bool_reset ->
+        Map.put(state, :char_state, 0)
+        |> Map.put(:num_state, 0)
+
+      true ->
+        # IO.inspect("#{inspect(state, pretty: true)} - P2 #{inspect(p2)} - P1 #{inspect(p1)}")
+        state
+    end
+  end
+
+  def find_cond_prev(state, p2, p1) do
+    bool_reset = ["."]
+    value_chars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+    cond do
+      # When to store IDX into entries
+      (p1 not in bool_reset and p1 not in value_chars and Map.get(state, :num_state) == 1) or
+          (p2 not in bool_reset and p2 not in value_chars and Map.get(state, :num_state) == 1) ->
+        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
+        |> Map.put(:char_state, 1)
+
+      p1 in value_chars and p2 not in bool_reset and p2 not in value_chars ->
+        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx) + 1] end)
+        |> Map.put(:char_state, 1)
+        |> Map.put(:num_state, 1)
+        |> Map.update(:v_idx, 0, fn idx -> idx + 1 end)
+
+      p1 in value_chars and Map.get(state, :char_state) == 1 ->
+        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
+        |> Map.put(:num_state, 1)
+
+
+
+      # # When to increment v_idx
+      # p2 in bool_reset and p1 in bool_reset and Map.get(state, :num_state) == 1 and
+      #     Map.get(state, :char_state) == 1 ->
+      #   Map.update(state, :v_idx, 0, fn idx -> idx + 1 end)
+      #   |> Map.put(:num_state, 0)
+      #   |> Map.put(:char_state, 0)
+
+      # We have at least three cases... need to think about this one a little bit
+
+      # When to store num_state 1
+      p1 in value_chars ->
+        Map.put(state, :num_state, 1)
+
+      # When to store char_state 1
+      (p2 not in bool_reset and p2 not in value_chars) or
+          (p1 not in bool_reset and p1 not in value_chars) ->
+        Map.put(state, :char_state, 1)
+
+      # When to reset
+      p2 in bool_reset and p1 in bool_reset ->
+        Map.put(state, :char_state, 0)
+        |> Map.put(:num_state, 0)
+
+      true ->
+        # IO.inspect("#{inspect(state, pretty: true)} - P2 #{inspect(p2)} - P1 #{inspect(p1)}")
+        state
+    end
+  end
+
+  # Aoc.solution_3(data|> String.split("\n", trim: true)) |> Aoc.construct_zipped() |> Stream.take(4) |> Enum.to_list |>  Aoc.build_hit_table
 end

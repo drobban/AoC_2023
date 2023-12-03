@@ -86,5 +86,8 @@ defmodule AocTest do
     ......755.
     ...$.*....
     .664.598.."
+
+    assert Aoc.solution_3(data|> String.split("\n", trim: true)) == 4361
+    assert Aoc.day3() == 0
   end
 end
