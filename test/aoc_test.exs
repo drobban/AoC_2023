@@ -73,6 +73,18 @@ defmodule AocTest do
 
     assert Aoc.solution_2_part2(String.split(data, "\n")) == 2286
     assert Aoc.day2_part2() == 66909
+  end
 
+  test "day3_part1" do
+    data = "467..114..
+    ...*......
+    ..35..633.
+    ......#...
+    617*......
+    .....+.58.
+    ..592.....
+    ......755.
+    ...$.*....
+    .664.598.."
   end
 end
