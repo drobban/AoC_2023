@@ -12,8 +12,8 @@ defmodule AocTest do
     a1b2c3d4e5f
     treb7uchet"
 
-    assert Aoc.solution_1(String.split(data, "\n")) == 142
-    assert Aoc.day1() == 55130
+    assert Aoc.Day1.solution_1(String.split(data, "\n")) == 142
+    assert Aoc.Day1.day1() == 55130
   end
 
   test "day1_part2" do
@@ -45,10 +45,10 @@ defmodule AocTest do
     ninebnpv7575three
     4mthree"
 
-    assert Aoc.solution_1(String.split(data, "\n") |> Aoc.part_2_process()) == 281
+    assert Aoc.Day1.solution_1(String.split(data, "\n") |> Aoc.Day1.part_2_process()) == 281
 
-    assert Aoc.solution_1(String.split(data2, "\n") |> Aoc.part_2_process()) == 1098
-    assert Aoc.day1_part2() == 54985
+    assert Aoc.Day1.solution_1(String.split(data2, "\n") |> Aoc.Day1.part_2_process()) == 1098
+    assert Aoc.Day1.day1_part2() == 54985
   end
 
   test "day2" do
