@@ -1,4 +1,5 @@
 defmodule Aoc do
+  require Logger
   @moduledoc """
   Documentation for `Aoc`.
   """
@@ -160,8 +161,7 @@ defmodule Aoc do
         |> Enum.to_list()
         |> Aoc.build_hit_table()
       }
-
-    |> merge_entries()
+      |> merge_entries()
 
     numbers =
       data
@@ -184,9 +184,9 @@ defmodule Aoc do
 
       acc ++ selected
     end)
-    |> Enum.sum
+    |> Enum.sum()
 
-    # hit_map
+    hit_map
     # |> Stream.map(fn line -> String.replace(line, "\n", "") end)
     # |> Stream.map(fn line -> String.split(line, "", trim: true) end)
     # |> Enum.to_list()
@@ -234,116 +234,79 @@ defmodule Aoc do
   def build_hit_table(data) do
     data
     |> Enum.with_index()
-    |> Enum.reduce(%{}, fn {lines, idx}, acc -> Map.put(acc, idx, find_entries(lines)) end)
+    |> Enum.reduce(%{}, fn {lines, idx}, acc ->
+      Logger.debug(idx)
+      Map.put(acc, idx, find_entries(lines)) end)
   end
 
   def find_entries(cols) do
     cols
     |> Enum.with_index()
     |> Enum.reduce(%{num_state: 0, char_state: 0, v_idx: 0, entries: []}, fn {{p1, p2}, idx},
-                                                                             acc ->
-      find_cond(acc, p2, p1)
+      acc ->
+        find_cond(acc, p2, p1)
     end)
   end
 
   def find_cond(state, p2, p1) do
     bool_reset = ["."]
     value_chars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    inv_char_state = bool_reset ++ value_chars
 
     cond do
-      # When to store IDX into entries
-      (p2 not in bool_reset and p2 not in value_chars and Map.get(state, :num_state) == 1) or
-          (p1 not in bool_reset and p1 not in value_chars and Map.get(state, :num_state) == 1) ->
+      # "@111"
+      # "@..."
+      Map.get(state, :char_state) == 1 and p2 in value_chars and p1 in inv_char_state ->
+        # Logger.debug("2")
+        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
+        |> Map.put(:char_state, 0)
+        |> Map.put(:num_state, 1)
+
+
+      # "111."
+      # "...@"
+      # Add entry and increase, reset num_state
+      Map.get(state, :num_state) == 1 and p2 in bool_reset and p1 not in inv_char_state ->
+        # Logger.debug("1")
         Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
         |> Map.put(:char_state, 1)
-
-      p2 in value_chars and p1 not in bool_reset and p1 not in value_chars ->
-        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx) + 1] end)
-        |> Map.put(:char_state, 1)
-        |> Map.put(:num_state, 1)
+        |> Map.put(:num_state, 0)
         |> Map.update(:v_idx, 0, fn idx -> idx + 1 end)
 
-      p2 in value_chars and Map.get(state, :char_state) == 1 ->
+     # ".111"
+     # ".@.."
+      p2 in value_chars and p1 not in inv_char_state ->
+        # Logger.debug("3")
         Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
+        |> Map.put(:char_state, 0)
         |> Map.put(:num_state, 1)
 
-      # When to increment v_idx
-      # p2 in bool_reset and p1 in bool_reset and Map.get(state, :num_state) == 1 and
-      #     Map.get(state, :char_state) == 1 ->
-      #   Map.update(state, :v_idx, 0, fn idx -> idx + 1 end)
-      #   |> Map.put(:num_state, 0)
-      #   |> Map.put(:char_state, 0)
-
-      # We have at least three cases... need to think about this one a little bit
-
-      # When to store num_state 1
-      p2 in value_chars ->
-        Map.put(state, :num_state, 1)
-
-      # When to store char_state 1
-      (p2 not in bool_reset and p2 not in value_chars) or
-          (p1 not in bool_reset and p1 not in value_chars) ->
+      # "@..."
+      # "@..."
+      p2 not in inv_char_state or p1 not in inv_char_state ->
         Map.put(state, :char_state, 1)
 
-      # When to reset
+      # "111."
+      # ".@.."
+      p2 in value_chars and p1 in inv_char_state ->
+        Map.put(state, :num_state, 1)
+
+      # Reset increase
+      Map.get(state, :num_state) == 1 and p2 not in value_chars and p1 in inv_char_state ->
+        Map.put(state, :char_state, 0)
+        |> Map.put(:num_state, 0)
+        |> Map.update(:v_idx, 0, fn idx -> idx + 1 end)
+
       p2 in bool_reset and p1 in bool_reset ->
         Map.put(state, :char_state, 0)
         |> Map.put(:num_state, 0)
 
-      true ->
-        # IO.inspect("#{inspect(state, pretty: true)} - P2 #{inspect(p2)} - P1 #{inspect(p1)}")
-        state
-    end
-  end
-
-  def find_cond_prev(state, p2, p1) do
-    bool_reset = ["."]
-    value_chars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-
-    cond do
-      # When to store IDX into entries
-      (p1 not in bool_reset and p1 not in value_chars and Map.get(state, :num_state) == 1) or
-          (p2 not in bool_reset and p2 not in value_chars and Map.get(state, :num_state) == 1) ->
-        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
-        |> Map.put(:char_state, 1)
-
-      p1 in value_chars and p2 not in bool_reset and p2 not in value_chars ->
-        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx) + 1] end)
-        |> Map.put(:char_state, 1)
-        |> Map.put(:num_state, 1)
-        |> Map.update(:v_idx, 0, fn idx -> idx + 1 end)
-
-      p1 in value_chars and Map.get(state, :char_state) == 1 ->
-        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
-        |> Map.put(:num_state, 1)
-
-
-
-      # # When to increment v_idx
-      # p2 in bool_reset and p1 in bool_reset and Map.get(state, :num_state) == 1 and
-      #     Map.get(state, :char_state) == 1 ->
-      #   Map.update(state, :v_idx, 0, fn idx -> idx + 1 end)
-      #   |> Map.put(:num_state, 0)
-      #   |> Map.put(:char_state, 0)
-
-      # We have at least three cases... need to think about this one a little bit
-
-      # When to store num_state 1
-      p1 in value_chars ->
-        Map.put(state, :num_state, 1)
-
-      # When to store char_state 1
-      (p2 not in bool_reset and p2 not in value_chars) or
-          (p1 not in bool_reset and p1 not in value_chars) ->
-        Map.put(state, :char_state, 1)
-
-      # When to reset
-      p2 in bool_reset and p1 in bool_reset ->
+      p2 in bool_reset and p1 in value_chars ->
         Map.put(state, :char_state, 0)
         |> Map.put(:num_state, 0)
 
       true ->
-        # IO.inspect("#{inspect(state, pretty: true)} - P2 #{inspect(p2)} - P1 #{inspect(p1)}")
+        Logger.debug("#{p2} #{p1} : #{inspect state}")
         state
     end
   end
