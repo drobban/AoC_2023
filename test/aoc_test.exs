@@ -94,10 +94,11 @@ defmodule AocTest do
              ...*.....718.......279........%...............................*.271.............@.......*......932.......621..637.843..................*....
              ..59..........%2...........................................400...*...142.870...746......256..........865*...........%...=.....%...409...761."
 
-    # When to increment found corner case
-    # 668 318 883 881 655 26 799 876 91 699 807 391 903 713 196 230 965 682 873 755 296 958 983 718 271 932 621 843 59 2 400 746 256 865 761
-    # assert Aoc.solution_3(data|> String.split("\n", trim: true)) == 4361
-    assert Aoc.solution_3(data2 |> String.split("\n", trim: true)) == 21443
-    # assert Aoc.day3() == 0
+
+
+
+    assert Aoc.solution_3(data|> String.split("\n", trim: true)) == 4361
+    assert Aoc.solution_3(data2 |> String.split("\n", trim: true)) == 23354
+    assert Aoc.day3() == 553825
   end
 end

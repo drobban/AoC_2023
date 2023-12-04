@@ -1,5 +1,6 @@
 defmodule Aoc do
   require Logger
+
   @moduledoc """
   Documentation for `Aoc`.
   """
@@ -186,7 +187,7 @@ defmodule Aoc do
     end)
     |> Enum.sum()
 
-    hit_map
+    # hit_map
     # |> Stream.map(fn line -> String.replace(line, "\n", "") end)
     # |> Stream.map(fn line -> String.split(line, "", trim: true) end)
     # |> Enum.to_list()
@@ -235,16 +236,16 @@ defmodule Aoc do
     data
     |> Enum.with_index()
     |> Enum.reduce(%{}, fn {lines, idx}, acc ->
-      Logger.debug(idx)
-      Map.put(acc, idx, find_entries(lines)) end)
+      Map.put(acc, idx, find_entries(lines))
+    end)
   end
 
   def find_entries(cols) do
     cols
     |> Enum.with_index()
-    |> Enum.reduce(%{num_state: 0, char_state: 0, v_idx: 0, entries: []}, fn {{p1, p2}, idx},
-      acc ->
-        find_cond(acc, p2, p1)
+    |> Enum.reduce(%{num_state: 0, char_state: 0, v_idx: 0, entries: []}, fn {{p1, p2}, _idx},
+                                                                             acc ->
+      find_cond(acc, p2, p1)
     end)
   end
 
@@ -253,60 +254,162 @@ defmodule Aoc do
     value_chars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
     inv_char_state = bool_reset ++ value_chars
 
-    cond do
-      # "@111"
-      # "@..."
-      Map.get(state, :char_state) == 1 and p2 in value_chars and p1 in inv_char_state ->
-        # Logger.debug("2")
-        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
-        |> Map.put(:char_state, 0)
-        |> Map.put(:num_state, 1)
+    num_state = Map.get(state, :num_state) == 1
+    char_state = Map.get(state, :char_state) == 1
+    p2_symbol = p2 not in inv_char_state
+    p2_val = p2 in value_chars
+    p2_reset = p2 in bool_reset
+    p1_symbol = p1 not in inv_char_state
 
-
-      # "111."
-      # "...@"
-      # Add entry and increase, reset num_state
-      Map.get(state, :num_state) == 1 and p2 in bool_reset and p1 not in inv_char_state ->
-        # Logger.debug("1")
-        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
+    case {num_state, char_state, p2_symbol, p2_val, p2_reset, p1_symbol} do
+        {false, true, false, false, true, true} ->
+        # "...."
+        # "@@.."
+        state
         |> Map.put(:char_state, 1)
-        |> Map.put(:num_state, 0)
-        |> Map.update(:v_idx, 0, fn idx -> idx + 1 end)
 
-     # ".111"
-     # ".@.."
-      p2 in value_chars and p1 not in inv_char_state ->
-        # Logger.debug("3")
-        Map.update(state, :entries, [], fn entries -> entries ++ [Map.get(state, :v_idx)] end)
+      {true, false, false, false, true, false} ->
+        # Increment :v_idx only scenarios
+        # "1..."
+        # "...."
+        state |> Map.update(:v_idx, 0, fn i -> i + 1 end) |> Map.put(:num_state, 0)
+
+      {true, true, false, false, true, false} ->
+        # Increment :v_idx
+        # ".111."
+        # "...@1"
+        state
+        |> Map.update(:v_idx, 0, fn i -> i + 1 end)
+        |> Map.put(:num_state, 0)
         |> Map.put(:char_state, 0)
+
+
+      {true, false, true, false, false, _} ->
+        # Increment :v_idx and store entry
+        # ".111@"
+        # "....@"
+        state
+        |> Map.update(:v_idx, 0, fn i -> i + 1 end)
+        |> Map.put(:num_state, 0)
+        |> Map.put(:char_state, 1)
+        |> Map.update(:entries, [], fn c ->
+          c ++ [Map.get(state, :v_idx)]
+        end)
+
+      {true, false, false, false, true, true} ->
+        # Increment :v_idx and store entry
+        # ".111."
+        # "....@"
+        state
+        |> Map.update(:v_idx, 0, fn i -> i + 1 end)
+        |> Map.put(:num_state, 0)
+        |> Map.put(:char_state, 1)
+        |> Map.update(:entries, [], fn c ->
+          c ++ [Map.get(state, :v_idx)]
+        end)
+
+      {true, false, false, true, false, true} ->
+        # store entry
+        # ".111."
+        # "...@."
+        state
+        |> Map.put(:num_state, 1)
+        |> Map.put(:char_state, 1)
+        |> Map.update(:entries, [], fn c ->
+          c ++ [Map.get(state, :v_idx)]
+        end)
+
+      {false, true, false, true, false, true} ->
+        # store entry
+        # "@111."
+        # "@@..."
+        state
+        |> Map.update(:v_idx, 0, fn i -> i + 1 end)
+        |> Map.put(:num_state, 1)
+        |> Map.put(:char_state, 1)
+        |> Map.update(:entries, [], fn c ->
+          c ++ [Map.get(state, :v_idx)]
+        end)
+
+      {false, true, false, true, false, false} ->
+        # store entry
+        # ".111."
+        # "@...."
+        state
+        |> Map.put(:num_state, 1)
+        |> Map.put(:char_state, 0)
+        |> Map.update(:entries, [], fn c ->
+          c ++ [Map.get(state, :v_idx)]
+        end)
+
+      {true, true, false, true, false, false} ->
+        # store entry
+        # "1111."
+        # "@...."
+        state
+        |> Map.put(:num_state, 1)
+        |> Map.put(:char_state, 0)
+        |> Map.update(:entries, [], fn c ->
+          c ++ [Map.get(state, :v_idx)]
+        end)
+
+      {false, false, false, true, false, true} ->
+        # store entry
+        # ".111."
+        # "@...."
+        state
+        |> Map.put(:num_state, 1)
+        |> Map.put(:char_state, 0)
+        |> Map.update(:entries, [], fn c ->
+          c ++ [Map.get(state, :v_idx)]
+        end)
+
+      {false, false, false, false, true, true} ->
+        # "...."
+        # ".@.."
+        state
+        |> Map.put(:char_state, 1)
+
+      {false, false, true, false, false, false} ->
+        # ".@.."
+        # "...."
+        state
+        |> Map.put(:char_state, 1)
+
+      {false, true, true, false, false, true} ->
+        # "@@.."
+        # ".@.."
+        state
+        |> Map.put(:char_state, 1)
+
+      {false, true, false, false, true, false} ->
+        # "...."
+        # ".@.."
+        state
+        |> Map.put(:char_state, 0)
+
+      {false, true, true, false, false, false} ->
+        # ".@.."
+        # "@..."
+        state
+        |> Map.put(:char_state, 0)
+
+      {false, false, true, false, false, true} ->
+        # ".@.."
+        # ".@.."
+        state
+        |> Map.put(:char_state, 1)
+
+      {_, false, false, true, false, false} ->
+        # "..3."
+        # "...."
+        state
         |> Map.put(:num_state, 1)
 
-      # "@..."
-      # "@..."
-      p2 not in inv_char_state or p1 not in inv_char_state ->
-        Map.put(state, :char_state, 1)
 
-      # "111."
-      # ".@.."
-      p2 in value_chars and p1 in inv_char_state ->
-        Map.put(state, :num_state, 1)
-
-      # Reset increase
-      Map.get(state, :num_state) == 1 and p2 not in value_chars and p1 in inv_char_state ->
-        Map.put(state, :char_state, 0)
-        |> Map.put(:num_state, 0)
-        |> Map.update(:v_idx, 0, fn idx -> idx + 1 end)
-
-      p2 in bool_reset and p1 in bool_reset ->
-        Map.put(state, :char_state, 0)
-        |> Map.put(:num_state, 0)
-
-      p2 in bool_reset and p1 in value_chars ->
-        Map.put(state, :char_state, 0)
-        |> Map.put(:num_state, 0)
-
-      true ->
-        Logger.debug("#{p2} #{p1} : #{inspect state}")
+      {false, false, false, false, true, false} ->
+        # "...."
+        # "...."
         state
     end
   end
