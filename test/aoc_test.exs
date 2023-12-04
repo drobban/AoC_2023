@@ -58,10 +58,14 @@ defmodule AocTest do
     Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
     Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"
 
-    assert Aoc.solution_2(String.split(data, "\n"), %{"red" => 12, "green" => 13, "blue" => 14}) ==
+    assert Aoc.Day2.solution_2(String.split(data, "\n"), %{
+             "red" => 12,
+             "green" => 13,
+             "blue" => 14
+           }) ==
              8
 
-    assert Aoc.day2() == 2156
+    assert Aoc.Day2.day2() == 2156
   end
 
   test "day2_part2" do
@@ -71,8 +75,8 @@ defmodule AocTest do
     Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
     Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"
 
-    assert Aoc.solution_2_part2(String.split(data, "\n")) == 2286
-    assert Aoc.day2_part2() == 66909
+    assert Aoc.Day2.solution_2_part2(String.split(data, "\n")) == 2286
+    assert Aoc.Day2.day2_part2() == 66909
   end
 
   test "day3_part1" do
@@ -87,18 +91,16 @@ defmodule AocTest do
     ...$.*....
     .664.598.."
 
-    data2 = "....668.484...............*............875.................*.........*....................227...*..908.............215......*.......270.....
+    data2 =
+      "....668.484...............*............875.................*.........*....................227...*..908.............215......*.......270.....
              .......*......771..........318....883......881...........655.@26..130..799.......876..91......28...........699.........807...510............
              .............-........391*.........*.......+......903..................*.....379.*....@...........713........#............*.................
              ..........+................196..230...........411....*965..682.......873....$.....916....755....&..=.....................296......+958.983..
              ...*.....718.......279........%...............................*.271.............@.......*......932.......621..637.843..................*....
              ..59..........%2...........................................400...*...142.870...746......256..........865*...........%...=.....%...409...761."
 
-
-
-
-    assert Aoc.solution_3(data|> String.split("\n", trim: true)) == 4361
+    assert Aoc.solution_3(data |> String.split("\n", trim: true)) == 4361
     assert Aoc.solution_3(data2 |> String.split("\n", trim: true)) == 23354
-    assert Aoc.day3() == 553825
+    assert Aoc.day3() == 553_825
   end
 end
