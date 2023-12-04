@@ -34,10 +34,6 @@ defmodule Aoc.Day4 do
   end
 
   def calc_powers_of_size(set) do
-    if Enum.count(set) > 0 do
-      2 ** (Enum.count(set) - 1)
-    else
-      0
-    end
+    if Enum.count(set) > 0, do: 2 ** (Enum.count(set) - 1), else: 0
   end
 end
