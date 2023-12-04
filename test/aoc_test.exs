@@ -99,8 +99,8 @@ defmodule AocTest do
              ...*.....718.......279........%...............................*.271.............@.......*......932.......621..637.843..................*....
              ..59..........%2...........................................400...*...142.870...746......256..........865*...........%...=.....%...409...761."
 
-    assert Aoc.solution_3(data |> String.split("\n", trim: true)) == 4361
-    assert Aoc.solution_3(data2 |> String.split("\n", trim: true)) == 23354
-    assert Aoc.day3() == 553_825
+    assert Aoc.Day3.solution_3(data |> String.split("\n", trim: true)) == 4361
+    assert Aoc.Day3.solution_3(data2 |> String.split("\n", trim: true)) == 23354
+    assert Aoc.Day3.day3() == 553_825
   end
 end
